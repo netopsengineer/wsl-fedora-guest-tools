@@ -1,0 +1,74 @@
+---
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  shell-quality-and-smoke:
+    runs-on: ubuntu-latest
+    container:
+      image: fedora:43
+
+    steps:
+      - name: Install git
+        run: dnf -y install git
+
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install tooling
+        run: dnf -y install sudo shellcheck shfmt util-linux dnf5
+
+      - name: Syntax check
+        run: bash -n wsl-fedora-guest-tools.sh
+
+      - name: ShellCheck
+        run: shellcheck wsl-fedora-guest-tools.sh
+
+      - name: Format check
+        run: shfmt -d wsl-fedora-guest-tools.sh
+
+      - name: Smoke checks
+        run: |
+          ./wsl-fedora-guest-tools.sh --help >/dev/null
+          ./wsl-fedora-guest-tools.sh --list-tools >/dev/null
+          ./wsl-fedora-guest-tools.sh --dry-run --profile core >/dev/null
+          ./wsl-fedora-guest-tools.sh --dry-run --profile all --skip volta,uv,claude,codex >/dev/null
+          ./wsl-fedora-guest-tools.sh --dry-run --only dnf --skip dnf >/dev/null
+
+  smoke-non-dnf5-fedora39:
+    runs-on: ubuntu-latest
+    container:
+      image: fedora:39
+
+    steps:
+      - name: Install git
+        run: dnf -y install git
+
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install tooling
+        run: dnf -y install sudo shellcheck shfmt util-linux dnf-plugins-core
+
+      - name: Ensure non-dnf5 test preconditions
+        run: |
+          rm -f /etc/yum.repos.d/gh-cli.repo
+          dnf -y remove gh || true
+          if command -v dnf5 >/dev/null 2>&1; then
+            echo "dnf5 is present; this job must exercise the non-dnf5 path." >&2
+            exit 1
+          fi
+
+      - name: Exercise non-dnf5 dry-run path
+        run: |
+          out="$(./wsl-fedora-guest-tools.sh --dry-run --profile core)"
+          printf '%s\n' "$out"
+          printf '%s\n' "$out" | grep -F "DNF backend selected: dnf"
+          printf '%s\n' "$out" | grep -F "DRY-RUN: sudo dnf --refresh upgrade -y"
+          printf '%s\n' "$out" | grep -F "DRY-RUN: sudo dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo"
+          printf '%s\n' "$out" | grep -F "DRY-RUN: sudo dnf install -y gh --enablerepo=gh-cli"
