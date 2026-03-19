@@ -36,13 +36,13 @@ jobs:
 
     steps:
       - name: Install git
-        run: dnf -y --no-weak-deps install git
+        run: dnf install -y git
 
       - name: Check out repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Install tooling
-        run: dnf -y --no-weak-deps install sudo shellcheck shfmt util-linux
+        run: dnf install -y sudo shellcheck shfmt util-linux
 
       - name: Syntax check
         run: bash -n wsl-fedora-guest-tools.sh
