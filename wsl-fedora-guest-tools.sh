@@ -455,7 +455,7 @@ step_fail_optional() {
 	fi
 }
 
-# shellcheck disable=SC2317
+# shellcheck disable=SC2317,SC2329
 on_err() {
 	local rc="$1"
 	local line="$2"
@@ -468,7 +468,7 @@ on_err() {
 	fi
 }
 
-# shellcheck disable=SC2317
+# shellcheck disable=SC2317,SC2329
 print_summary() {
 	local name status detail
 	printf '\n'
@@ -488,7 +488,7 @@ print_summary() {
 	fi
 }
 
-# shellcheck disable=SC2317
+# shellcheck disable=SC2317,SC2329
 on_exit() {
 	local rc="$1"
 
