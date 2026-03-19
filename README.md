@@ -1,6 +1,6 @@
 # WSL Fedora Guest Tools
 
-A robust bootstrapper and idempotent update utility for Fedora WSL environments. It orchestrates critical system installs and updates via DNF (with `dnf5` preference) alongside optional updates for developer tools and AI CLIs: Volta/Node.js, `uv`, Claude Code, and Codex.
+A robust bootstrapper and idempotent update utility for Fedora WSL environments. It orchestrates critical system installs and updates via DNF5 alongside optional updates for developer tools and AI CLIs: Volta/Node.js, `uv`, Claude Code, and Codex.
 
 ## Why
 
@@ -8,9 +8,8 @@ Developer tooling and AI CLIs change frequently. Keeping everything current ofte
 
 ## Features
 
-- **System Updates**: Safe DNF-based system package upgrades (`dnf5` preferred, falls back to `dnf`)
+- **System Updates**: Safe DNF5-based system package upgrades
 - **Baseline Bootstrap**: Idempotent install of required Fedora packages and GitHub CLI repository/package
-- **Backend-Aware DNF Repo Setup**: Uses `dnf5` and `dnf` compatible commands for GitHub CLI repo enablement
 - **Code-First Tool Logic**: Tool update behavior stays in code for clear review and predictable behavior
 - **Profiles + Selectors**: Use `--profile`, `--only`, and `--skip` to avoid skip-flag sprawl as tools grow
 - **Persistent Defaults**: Optional user config for default profile and disabled tools
@@ -147,14 +146,14 @@ With this config, default runs select `dnf,volta` unless overridden by CLI flags
 - **OS**: Fedora (use `--force` to bypass on non-Fedora systems)
 - **Privileges**: Passwordless `sudo` required for DNF operations
 - **Dependencies**:
-  - `bash`
-  - `flock` (from `util-linux`; used for lock-based concurrency control)
-  - `dnf` or `dnf5`
+    - `bash`
+    - `flock` (from `util-linux`; used for lock-based concurrency control)
+    - `dnf5`
 - **Optional tools** (for respective update steps):
-  - `volta` (for Node.js management and Codex)
-  - `uv`
-  - `claude`
-  - `codex`
+    - `volta` (for Node.js management and Codex)
+    - `uv`
+    - `claude`
+    - `codex`
 
 ## Exit Codes
 
@@ -228,27 +227,39 @@ This project intentionally keeps tool behavior in code. For any new tool PR:
 - Keep dry-run output parity for the new step
 - Classify failures correctly (`critical` vs `optional`) and include remediation hints
 - Update README sections:
-  - Tool IDs and Profiles
-  - Examples (if applicable)
-  - Any behavior notes specific to the tool
+    - Tool IDs and Profiles
+    - Examples (if applicable)
+    - Any behavior notes specific to the tool
 
 ## Continuous Integration
 
-GitHub Actions runs static quality checks and smoke tests for:
+GitHub Actions runs static quality checks and smoke tests on a matrix of supported Fedora versions (currently Fedora 42 and 43).
 
-- every PR
-- every push to `main`
-- a weekly scheduled run (Monday 07:13 UTC)
-- manual runs via `workflow_dispatch`
+**Triggers:**
+
+- Every PR
+- Every push to `main`
+- Weekly scheduled run (Monday 07:13 UTC)
+- Manual runs via `workflow_dispatch`
+
+**Checks:**
 
 - `bash -n` syntax validation
 - `shellcheck` linting
 - `shfmt -d` format checks
 - `--help`, `--list-tools`, and dry-run smoke scenarios
 
-For scheduled runs, GitHub Actions also creates (or updates) an issue titled
-`Scheduled CI failure detected` when CI fails, then automatically closes it on
-the next successful scheduled run.
+**Practices:**
+
+- All third-party actions are pinned to SHA digests for supply-chain security
+- Container setup uses `--no-weak-deps` to minimize image size
+
+**Automated failure alerts:**
+
+For scheduled runs, a `notify-scheduled-failure` job creates (or updates) a
+GitHub issue titled `Scheduled CI failure detected` (labeled `ci-scheduled`)
+when CI fails, then automatically closes it on the next successful scheduled
+run.
 
 ## Troubleshooting
 

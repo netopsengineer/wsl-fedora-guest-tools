@@ -11,9 +11,11 @@ readonly EXIT_SUDO=4
 readonly EXIT_LOCK=5
 readonly EXIT_MISSING_CMD=6
 readonly EXIT_OPTIONAL_FAILED=10
+
 readonly GH_CLI_REPO_ID="gh-cli"
 readonly GH_CLI_REPOFILE_URL="https://cli.github.com/packages/rpm/gh-cli.repo"
 readonly GH_CLI_REPO_FILE="/etc/yum.repos.d/${GH_CLI_REPO_ID}.repo"
+
 readonly DEFAULT_PROFILE_NAME="all"
 readonly PROFILE_ALL_TOOLS="dnf,volta,uv,claude,codex"
 readonly PROFILE_CORE_TOOLS="dnf"
@@ -21,7 +23,6 @@ readonly PROFILE_DEV_TOOLS="dnf,volta,uv"
 readonly PROFILE_AI_TOOLS="dnf,claude,codex"
 readonly -a TOOL_IDS=("dnf" "volta" "uv" "claude" "codex")
 readonly DNF5_PLUGIN_PACKAGE="dnf5-plugins"
-readonly DNF_PLUGIN_PACKAGE="dnf-plugins-core"
 readonly -a BASELINE_PACKAGES_COMMON=(
 	"libgcc"
 	"libstdc++"
@@ -57,10 +58,8 @@ SKIP_UV=0
 SKIP_CLAUDE=0
 SKIP_VOLTA=0
 SKIP_CODEX=0
-
 CURRENT_STEP=""
 OPTIONAL_FAILURES=0
-DNF_BACKEND=""
 
 # Last captured output from run_cmd_optional_capture (stdout+stderr).
 LAST_CMD_OUT=""
@@ -90,21 +89,10 @@ declare -A TOOL_SELECTED=(
 )
 declare -a STEP_ORDER=()
 
-ts() {
-	date '+%Y-%m-%dT%H:%M:%S%z'
-}
-
-log() {
-	printf '%s [INFO] %s\n' "$(ts)" "$*"
-}
-
-warn() {
-	printf '%s [WARN] %s\n' "$(ts)" "$*" >&2
-}
-
-error() {
-	printf '%s [ERROR] %s\n' "$(ts)" "$*" >&2
-}
+ts() { date '+%Y-%m-%dT%H:%M:%S%z'; }
+log() { printf '%s [INFO] %s\n' "$(ts)" "$*"; }
+warn() { printf '%s [WARN] %s\n' "$(ts)" "$*" >&2; }
+error() { printf '%s [ERROR] %s\n' "$(ts)" "$*" >&2; }
 
 die() {
 	local code="${1:-1}"
@@ -113,9 +101,7 @@ die() {
 	exit "${code}"
 }
 
-have_cmd() {
-	command -v "$1" >/dev/null 2>&1
-}
+have_cmd() { command -v "$1" >/dev/null 2>&1; }
 
 fmt_cmd() {
 	local -a q=()
@@ -133,9 +119,7 @@ trim_ws() {
 	printf '%s' "${text}"
 }
 
-to_lower() {
-	printf '%s' "$1" | tr '[:upper:]' '[:lower:]'
-}
+to_lower() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]'; }
 
 is_valid_profile() {
 	case "$1" in
@@ -172,7 +156,6 @@ parse_csv_to_array() {
 	if [[ -z "${csv}" ]]; then
 		return 0
 	fi
-
 	IFS=',' read -r -a raw <<<"${csv}"
 	for item in "${raw[@]}"; do
 		item="$(to_lower "$(trim_ws "${item}")")"
@@ -193,18 +176,15 @@ filter_tool_ids() {
 
 	out_ref=()
 	parse_csv_to_array "${csv}" parsed
-
 	for id in "${parsed[@]}"; do
 		if is_valid_tool_id "${id}"; then
 			out_ref+=("${id}")
 			continue
 		fi
-
 		if ((strict == 1)); then
 			usage
 			die "${EXIT_USAGE}" "Unknown tool id in ${context}: ${id}. Use --list-tools to view valid IDs."
 		fi
-
 		warn "Ignoring unknown tool id in ${context}: ${id}"
 	done
 }
@@ -238,7 +218,6 @@ set_selection_from_profile() {
 	if ! csv="$(profile_tools_csv "${profile}")"; then
 		return 1
 	fi
-
 	parse_csv_to_array "${csv}" ids
 	clear_tool_selection
 	add_tool_ids_to_selection "${ids[@]}"
@@ -252,17 +231,16 @@ tool_is_selected() {
 selected_tools_csv() {
 	local id
 	local -a selected=()
+
 	for id in "${TOOL_IDS[@]}"; do
 		if tool_is_selected "${id}"; then
 			selected+=("${id}")
 		fi
 	done
-
 	if ((${#selected[@]} == 0)); then
 		printf 'none'
 		return 0
 	fi
-
 	local IFS=','
 	printf '%s' "${selected[*]}"
 }
@@ -274,12 +252,11 @@ config_file_path() {
 load_config() {
 	local config_file line key value
 	local lineno=0
-	config_file="$(config_file_path)"
 
+	config_file="$(config_file_path)"
 	if [[ ! -f "${config_file}" ]]; then
 		return 0
 	fi
-
 	if [[ ! -r "${config_file}" ]]; then
 		warn "Config file exists but is not readable: ${config_file}"
 		return 0
@@ -321,21 +298,11 @@ apply_selected_tools_to_skip_flags() {
 	SKIP_CLAUDE=1
 	SKIP_CODEX=1
 
-	if tool_is_selected "dnf"; then
-		SKIP_DNF=0
-	fi
-	if tool_is_selected "volta"; then
-		SKIP_VOLTA=0
-	fi
-	if tool_is_selected "uv"; then
-		SKIP_UV=0
-	fi
-	if tool_is_selected "claude"; then
-		SKIP_CLAUDE=0
-	fi
-	if tool_is_selected "codex"; then
-		SKIP_CODEX=0
-	fi
+	if tool_is_selected "dnf"; then SKIP_DNF=0; fi
+	if tool_is_selected "volta"; then SKIP_VOLTA=0; fi
+	if tool_is_selected "uv"; then SKIP_UV=0; fi
+	if tool_is_selected "claude"; then SKIP_CLAUDE=0; fi
+	if tool_is_selected "codex"; then SKIP_CODEX=0; fi
 }
 
 resolve_tool_selection() {
@@ -386,11 +353,11 @@ resolve_tool_selection() {
 
 print_tool_catalog() {
 	local id
+
 	printf 'Supported tool IDs:\n'
 	for id in "${TOOL_IDS[@]}"; do
-		printf '  %-7s %s (profiles: %s)\n' "${id}" "${TOOL_DESCRIPTIONS["${id}"]}" "${TOOL_PROFILES["${id}"]}"
+		printf '  %-7s  %s  (profiles: %s)\n' "${id}" "${TOOL_DESCRIPTIONS["${id}"]}" "${TOOL_PROFILES["${id}"]}"
 	done
-
 	printf '\n'
 	printf 'Profiles:\n'
 	printf '  all  : %s\n' "${PROFILE_ALL_TOOLS}"
@@ -402,12 +369,10 @@ print_tool_catalog() {
 option_value_or_die() {
 	local flag="$1"
 	local value="${2:-}"
-
 	if [[ -z "${value}" ]] || [[ "${value}" == --* ]]; then
 		usage
 		die "${EXIT_USAGE}" "Missing value for ${flag}"
 	fi
-
 	printf '%s' "${value}"
 }
 
@@ -449,7 +414,6 @@ step_fail_optional() {
 	local detail="${2:-}"
 	step_set "${name}" "FAILED" "${detail}"
 	record_optional_failure
-
 	if ((STRICT == 1)); then
 		die 1 "Strict mode: aborting due to failure in step: ${name}. ${detail}"
 	fi
@@ -460,9 +424,7 @@ on_err() {
 	local rc="$1"
 	local line="$2"
 	local cmd="$3"
-
 	error "Unhandled failure: cmd=$(printf '%q' "${cmd}") exit=${rc} line=${line}"
-
 	if [[ -n "${CURRENT_STEP:-}" ]] && [[ "${STEP_STATUS["${CURRENT_STEP}"]:-}" == "RUNNING" ]]; then
 		step_set "${CURRENT_STEP}" "FAILED" "Command failed (exit ${rc}) at line ${line}"
 	fi
@@ -477,12 +439,11 @@ print_summary() {
 		status="${STEP_STATUS["${name}"]:-INCOMPLETE}"
 		detail="${STEP_DETAIL["${name}"]:-}"
 		if [[ -n "${detail}" ]]; then
-			printf '%s [INFO] - %-28s : %-9s (%s)\n' "$(ts)" "${name}" "${status}" "${detail}"
+			printf '%s [INFO]   - %-28s : %-9s  (%s)\n' "$(ts)" "${name}" "${status}" "${detail}"
 		else
-			printf '%s [INFO] - %-28s : %-9s\n' "$(ts)" "${name}" "${status}"
+			printf '%s [INFO]   - %-28s : %-9s\n' "$(ts)" "${name}" "${status}"
 		fi
 	done
-
 	if ((OPTIONAL_FAILURES > 0)); then
 		warn "Optional step failures: ${OPTIONAL_FAILURES} (final exit will be non-zero unless a critical failure already occurred)."
 	fi
@@ -491,36 +452,36 @@ print_summary() {
 # shellcheck disable=SC2317,SC2329
 on_exit() {
 	local rc="$1"
-
 	trap - EXIT
 	if ((SKIP_SUMMARY == 1)); then
 		exit "${rc}"
 	fi
 	print_summary
-
 	if ((rc == 0 && OPTIONAL_FAILURES > 0)); then
 		exit "${EXIT_OPTIONAL_FAILED}"
 	fi
-
 	exit "${rc}"
 }
 
 usage() {
 	cat <<'EOF'
-WSL Fedora guest tools updater: critical DNF system upgrade/bootstrap (prefers dnf5), plus optional updates for uv, Volta/Node, Claude Code, and Codex.
+WSL Fedora guest tools updater: critical DNF5 system upgrade/bootstrap,
+plus optional updates for uv, Volta/Node, Claude Code, and Codex.
 
 Usage:
-  wsl-fedora-guest-tools.sh [--dry-run] [--force] [--strict] [--profile <name>] [--only <tool_ids_csv>] [--skip <tool_ids_csv>] [--list-tools]
+  wsl-fedora-guest-tools.sh [--dry-run] [--force] [--strict]
+    [--profile <name>] [--only <tool_ids_csv>] [--skip <tool_ids_csv>]
+    [--list-tools]
 
 Flags:
-  --dry-run         Print what would run; do not execute update commands.
-  --force           Skip Fedora guard (still logs detected OS info).
-  --strict          Any failure is fatal (including optional tool steps).
-  --profile <name>  Tool profile to start from: all, core, dev, ai.
-  --only <csv>      Replace profile selection with exactly these tool IDs.
-  --skip <csv>      Remove these tool IDs from the current selection.
-  --list-tools      Print supported tool IDs and profile membership, then exit.
-  --help            Show this help.
+  --dry-run     Print what would run; do not execute update commands.
+  --force       Skip Fedora guard (still logs detected OS info).
+  --strict      Any failure is fatal (including optional tool steps).
+  --profile <name> Tool profile to start from: all, core, dev, ai.
+  --only <csv>  Replace profile selection with exactly these tool IDs.
+  --skip <csv>  Remove these tool IDs from the current selection.
+  --list-tools  Print supported tool IDs and profile membership, then exit.
+  --help        Show this help.
 EOF
 }
 
@@ -580,20 +541,12 @@ require_cmd_or_die() {
 	fi
 }
 
-set_dnf_backend_or_die() {
-	if [[ -n "${DNF_BACKEND}" ]]; then
-		return 0
-	fi
-
-	if have_cmd "dnf5"; then
-		DNF_BACKEND="dnf5"
-	elif have_cmd "dnf"; then
-		DNF_BACKEND="dnf"
-	else
+require_dnf5_or_die() {
+	if ! have_cmd "dnf5"; then
 		if [[ -n "${CURRENT_STEP:-}" ]] && [[ "${STEP_STATUS["${CURRENT_STEP}"]:-}" == "RUNNING" ]]; then
-			step_set "${CURRENT_STEP}" "FAILED" "Neither dnf5 nor dnf found"
+			step_set "${CURRENT_STEP}" "FAILED" "dnf5 not found"
 		fi
-		die "${EXIT_MISSING_CMD}" "Neither dnf5 nor dnf is available. Install DNF, then re-run."
+		die "${EXIT_MISSING_CMD}" "dnf5 is required but not available. Install dnf5, then re-run."
 	fi
 }
 
@@ -620,27 +573,22 @@ latest_node_version_from_volta() {
 
 latest_codex_version_from_npm() {
 	local out semver
-
 	if ! have_cmd "npm"; then
 		return 1
 	fi
-
 	if ! out="$(npm view @openai/codex version --json --loglevel=error 2>/dev/null)"; then
 		return 1
 	fi
-
 	if ! semver="$(extract_first_semver "${out}")"; then
 		return 1
 	fi
-
 	printf '%s' "${semver}"
 	return 0
 }
 
 acquire_lock() {
 	step_begin "Lock"
-
-	require_cmd_or_die "flock" "Install util-linux (for example: sudo dnf install -y util-linux)."
+	require_cmd_or_die "flock" "Install util-linux (for example: sudo dnf5 install -y util-linux)."
 
 	local lock_dir lock_file
 	lock_dir="${XDG_RUNTIME_DIR:-/tmp}"
@@ -651,13 +599,11 @@ acquire_lock() {
 		step_set "${CURRENT_STEP}" "FAILED" "Another run is in progress (lock: ${lock_file})"
 		die "${EXIT_LOCK}" "Another instance is already running (lock: ${lock_file})."
 	fi
-
 	step_ok "${CURRENT_STEP}" "Acquired ${lock_file}"
 }
 
 validate_fedora() {
 	step_begin "OS guard"
-
 	if [[ ! -r /etc/os-release ]]; then
 		step_set "${CURRENT_STEP}" "FAILED" "/etc/os-release not readable"
 		die "${EXIT_OS_GUARD}" "Cannot read /etc/os-release to validate OS."
@@ -665,7 +611,6 @@ validate_fedora() {
 
 	# shellcheck disable=SC1091
 	source /etc/os-release
-
 	local id version
 	id="${ID:-}"
 	version="${VERSION_ID:-}"
@@ -686,14 +631,11 @@ validate_fedora() {
 
 validate_passwordless_sudo() {
 	step_begin "Sudo check"
-
 	require_cmd_or_die "sudo" "Install sudo, and ensure passwordless sudo is configured for your user."
-
 	if ! sudo -n true >/dev/null 2>&1; then
 		step_set "${CURRENT_STEP}" "FAILED" "sudo -n true failed"
 		die "${EXIT_SUDO}" "Passwordless sudo is required. Configure NOPASSWD in sudoers for this user, then re-run."
 	fi
-
 	step_ok "${CURRENT_STEP}" "sudo -n ok"
 }
 
@@ -712,11 +654,10 @@ run_cmd_optional_capture() {
 	# Captures stdout+stderr to allow error-specific hints while keeping output visible.
 	# Returns the command exit code, but does not trigger ERR trap due to conditional usage.
 	local -a cmd=("$@")
-	local display out rc
+	local display out rc line
 
 	LAST_CMD_OUT=""
 	display="$(fmt_cmd "${cmd[@]}")"
-
 	if ((DRY_RUN == 1)); then
 		log "DRY-RUN: ${display}"
 		LAST_CMD_OUT=""
@@ -728,59 +669,50 @@ run_cmd_optional_capture() {
 	out="$("${cmd[@]}" 2>&1)" || rc=$?
 	rc="${rc:-0}"
 	LAST_CMD_OUT="${out}"
-
 	if [[ -n "${out}" ]]; then
 		while IFS= read -r line; do
 			log "OUT: ${line}"
 		done <<<"${out}"
 	fi
-
 	return "${rc}"
 }
 
 dnf_system_update() {
 	step_begin "System update"
-
 	if ((SKIP_DNF == 1)); then
 		step_skip "${CURRENT_STEP}" "Tool 'dnf' not selected"
 		return 0
 	fi
 
-	set_dnf_backend_or_die
-	local backend="${DNF_BACKEND}"
-	log "DNF backend selected: ${backend}"
-	step_set "${CURRENT_STEP}" "RUNNING" "backend=${backend}"
-	run_cmd_fatal sudo "${backend}" --refresh upgrade -y
+	require_dnf5_or_die
+	log "DNF backend selected: dnf5"
+	step_set "${CURRENT_STEP}" "RUNNING" "backend=dnf5"
 
-	step_ok "${CURRENT_STEP}" "backend=${backend}"
+	run_cmd_fatal sudo dnf5 --refresh upgrade -y
+
+	step_ok "${CURRENT_STEP}" "backend=dnf5"
 }
 
 baseline_dnf_bootstrap() {
 	step_begin "Baseline DNF bootstrap"
-
 	if ((SKIP_DNF == 1)); then
 		step_skip "${CURRENT_STEP}" "Tool 'dnf' not selected"
 		return 0
 	fi
 
 	require_cmd_or_die "rpm" "Install rpm, then re-run."
-	set_dnf_backend_or_die
+	require_dnf5_or_die
 
-	local backend pkg
+	local pkg
 	local -a required_packages=()
 	local -a missing_packages=()
 	local pkg_detail gh_detail repo_detail
-	backend="${DNF_BACKEND}"
+
 	pkg_detail="already-present"
 	gh_detail="already-installed"
 	repo_detail="not-needed"
 
-	required_packages=("${BASELINE_PACKAGES_COMMON[@]}")
-	if [[ "${backend}" == "dnf5" ]]; then
-		required_packages+=("${DNF5_PLUGIN_PACKAGE}")
-	else
-		required_packages+=("${DNF_PLUGIN_PACKAGE}")
-	fi
+	required_packages=("${BASELINE_PACKAGES_COMMON[@]}" "${DNF5_PLUGIN_PACKAGE}")
 
 	for pkg in "${required_packages[@]}"; do
 		if ! rpm -q --quiet "${pkg}"; then
@@ -788,10 +720,10 @@ baseline_dnf_bootstrap() {
 		fi
 	done
 
-	step_set "${CURRENT_STEP}" "RUNNING" "backend=${backend}"
+	step_set "${CURRENT_STEP}" "RUNNING" "backend=dnf5"
 
 	if ((${#missing_packages[@]} > 0)); then
-		run_cmd_fatal sudo "${backend}" install -y "${missing_packages[@]}"
+		run_cmd_fatal sudo dnf5 install -y "${missing_packages[@]}"
 		pkg_detail="installed:${#missing_packages[@]}"
 	fi
 
@@ -800,26 +732,17 @@ baseline_dnf_bootstrap() {
 		if [[ -f "${GH_CLI_REPO_FILE}" ]]; then
 			repo_detail="already-present"
 		else
-			if [[ "${backend}" == "dnf5" ]]; then
-				run_cmd_fatal sudo "${backend}" config-manager addrepo --from-repofile="${GH_CLI_REPOFILE_URL}"
-			else
-				run_cmd_fatal sudo "${backend}" config-manager --add-repo "${GH_CLI_REPOFILE_URL}"
-			fi
+			run_cmd_fatal sudo dnf5 config-manager addrepo --from-repofile="${GH_CLI_REPOFILE_URL}"
 			repo_detail="added"
 		fi
-		if [[ "${backend}" == "dnf5" ]]; then
-			run_cmd_fatal sudo "${backend}" install -y gh --repo "${GH_CLI_REPO_ID}"
-		else
-			run_cmd_fatal sudo "${backend}" install -y gh --enablerepo="${GH_CLI_REPO_ID}"
-		fi
+		run_cmd_fatal sudo dnf5 install -y gh --repo "${GH_CLI_REPO_ID}"
 	fi
 
-	step_ok "${CURRENT_STEP}" "backend=${backend}, pkgs=${pkg_detail}, gh=${gh_detail}, gh-repo=${repo_detail}"
+	step_ok "${CURRENT_STEP}" "backend=dnf5, pkgs=${pkg_detail}, gh=${gh_detail}, gh-repo=${repo_detail}"
 }
 
 volta_node_update() {
 	step_begin "Volta Node update"
-
 	if ((SKIP_VOLTA == 1)); then
 		step_skip "${CURRENT_STEP}" "Tool 'volta' not selected"
 		return 0
@@ -882,7 +805,6 @@ volta_node_update() {
 
 uv_update() {
 	step_begin "uv update"
-
 	if ((SKIP_UV == 1)); then
 		step_skip "${CURRENT_STEP}" "Tool 'uv' not selected"
 		return 0
@@ -949,7 +871,6 @@ uv_update() {
 
 claude_update() {
 	step_begin "Claude update"
-
 	if ((SKIP_CLAUDE == 1)); then
 		step_skip "${CURRENT_STEP}" "Tool 'claude' not selected"
 		return 0
@@ -1024,7 +945,6 @@ claude_update() {
 
 codex_update() {
 	step_begin "Codex update"
-
 	if ((SKIP_CODEX == 1)); then
 		step_skip "${CURRENT_STEP}" "Tool 'codex' not selected"
 		return 0
@@ -1111,7 +1031,6 @@ main() {
 
 	load_config
 	resolve_tool_selection
-
 	acquire_lock
 	validate_fedora
 	validate_passwordless_sudo
