@@ -69,6 +69,19 @@ Example of the distinction: if `SKIP_CODEX == 1`, use `step_skip`. If `SKIP_CODE
 - `ai`: AI assistant and agent CLIs. Add here if the tool is an AI CLI.
 - `all`: ALWAYS includes every tool. Every new tool MUST be added here.
 
+### Exit Code Reference
+
+| Code | Constant               | Meaning                           |
+|------|------------------------|-----------------------------------|
+| 2    | `EXIT_USAGE`           | Invalid CLI usage / arg error     |
+| 3    | `EXIT_OS_GUARD`        | Not Fedora                        |
+| 4    | `EXIT_SUDO`            | Passwordless sudo check failed    |
+| 5    | `EXIT_LOCK`            | Lock acquisition failed           |
+| 6    | `EXIT_MISSING_CMD`     | Required command not found        |
+| 10   | `EXIT_OPTIONAL_FAILED` | One or more optional steps failed |
+
+When adding a new exit code, choose a value not in this table, add a `readonly EXIT_*` constant to the script, and update this table and the README Exit Codes table.
+
 ## New Tool Checklist
 
 When adding a new tool, complete ALL of these steps. Missing any step creates an incomplete integration.
@@ -86,6 +99,8 @@ When adding a new tool, complete ALL of these steps. Missing any step creates an
 - [ ] Update `usage()` prose if it mentions specific tools by name (first line of the heredoc description).
 
 ### 2. Update Function (`wsl-fedora-guest-tools`)
+
+Reference implementation: `uv_update()` in `wsl-fedora-guest-tools` is the canonical example of a complete tool update function. Read it before writing a new one.
 
 Create a dedicated function named `<tool>_update()`. It MUST follow this structure:
 
@@ -136,7 +151,7 @@ Update ALL of these sections:
 
 When adding a new CLI flag:
 
-- [ ] Add global variable in the mutable globals block (lines 42–62).
+- [ ] Add global variable in the mutable globals block (between `# --- BEGIN MUTABLE GLOBALS ---` and `# --- END MUTABLE GLOBALS ---` markers).
 - [ ] Add case branch in `parse_args`. Use `option_value_or_die` if the flag takes a value.
 - [ ] Update `usage()` heredoc: add to both the synopsis line and the flags list.
 - [ ] Update `README.md` Command-Line Options table.
@@ -164,6 +179,18 @@ bash -n wsl-fedora-guest-tools
 shellcheck wsl-fedora-guest-tools
 shfmt -d wsl-fedora-guest-tools
 ```
+
+Install these tools locally with: `sudo dnf install -y shellcheck shfmt`
+
+### Pre-Commit Hooks
+
+The repository uses pre-commit hooks (`.pre-commit-config.yaml`) that run automatically on `git commit`. Commits are blocked if any hook fails. The hooks run:
+
+- `shfmt` — enforces shell formatting
+- `shellcheck` — enforces shell linting
+- File hygiene: `check-yaml`, `check-json`, `end-of-file-fixer`, `trailing-whitespace`, `mixed-line-ending`, `check-executables-have-shebangs`, `check-shebang-scripts-are-executable`, `check-added-large-files`, `check-merge-conflict`
+
+To run all hooks manually before committing: `pre-commit run --all-files`
 
 ### Smoke Checks
 

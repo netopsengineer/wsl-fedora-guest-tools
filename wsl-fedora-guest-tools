@@ -39,6 +39,7 @@ readonly -a BASELINE_PACKAGES_COMMON=(
 	"util-linux"
 )
 
+# --- BEGIN MUTABLE GLOBALS ---
 DRY_RUN=0
 FORCE=0
 STRICT=0
@@ -60,6 +61,7 @@ SKIP_VOLTA=0
 SKIP_CODEX=0
 CURRENT_STEP=""
 OPTIONAL_FAILURES=0
+# --- END MUTABLE GLOBALS ---
 
 # Last captured output from run_cmd_optional_capture (stdout+stderr).
 LAST_CMD_OUT=""
