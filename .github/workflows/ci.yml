@@ -39,7 +39,12 @@ jobs:
     steps:
       - name: Install git (dnf5)
         if: ${{ !matrix.assert_non_dnf5 }}
-        run: dnf --no-weak-deps -y install git
+        run: |
+          if dnf --help 2>&1 | grep -q -- '--no-weak-deps'; then
+            dnf -y install --no-weak-deps git
+          else
+            dnf -y --setopt=install_weak_deps=False install git
+          fi
 
       - name: Install git (dnf)
         if: ${{ matrix.assert_non_dnf5 }}
@@ -50,7 +55,12 @@ jobs:
 
       - name: Install tooling (dnf5)
         if: ${{ !matrix.assert_non_dnf5 }}
-        run: dnf --no-weak-deps -y install sudo shellcheck shfmt util-linux dnf5
+        run: |
+          if dnf --help 2>&1 | grep -q -- '--no-weak-deps'; then
+            dnf -y install --no-weak-deps sudo shellcheck shfmt util-linux dnf5
+          else
+            dnf -y --setopt=install_weak_deps=False install sudo shellcheck shfmt util-linux dnf5
+          fi
 
       - name: Install tooling (dnf)
         if: ${{ matrix.assert_non_dnf5 }}
