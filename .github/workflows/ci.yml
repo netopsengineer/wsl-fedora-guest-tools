@@ -51,7 +51,7 @@ jobs:
         run: dnf -y --setopt=install_weak_deps=False install git
 
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install tooling (dnf5)
         if: ${{ !matrix.assert_non_dnf5 }}
@@ -118,7 +118,7 @@ jobs:
       contents: read
     steps:
       - name: Create/update issue when scheduled run fails, close when healthy
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const owner = context.repo.owner;
