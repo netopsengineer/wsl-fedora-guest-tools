@@ -28,25 +28,33 @@ jobs:
         include:
           - fedora_image: fedora:43
             fedora_label: fedora43
-            dnf_tooling: dnf5
             assert_non_dnf5: false
           - fedora_image: fedora:39
             fedora_label: fedora39
-            dnf_tooling: dnf-plugins-core
             assert_non_dnf5: true
     container:
       image: ${{ matrix.fedora_image }}
     timeout-minutes: 20
 
     steps:
-      - name: Install git
-        run: dnf -y install git
+      - name: Install git (dnf5)
+        if: ${{ !matrix.assert_non_dnf5 }}
+        run: dnf -y install --no-weak-deps git
+
+      - name: Install git (dnf)
+        if: ${{ matrix.assert_non_dnf5 }}
+        run: dnf -y --setopt=install_weak_deps=False install git
 
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Install tooling
-        run: dnf -y install sudo shellcheck shfmt util-linux ${{ matrix.dnf_tooling }}
+      - name: Install tooling (dnf5)
+        if: ${{ !matrix.assert_non_dnf5 }}
+        run: dnf -y install --no-weak-deps sudo shellcheck shfmt util-linux dnf5
+
+      - name: Install tooling (dnf)
+        if: ${{ matrix.assert_non_dnf5 }}
+        run: dnf -y --setopt=install_weak_deps=False install sudo shellcheck shfmt util-linux dnf-plugins-core
 
       - name: Syntax check
         run: bash -n wsl-fedora-guest-tools.sh
@@ -69,7 +77,12 @@ jobs:
       - name: Ensure non-dnf5 test preconditions
         if: ${{ matrix.assert_non_dnf5 }}
         run: |
-          rm -f /etc/yum.repos.d/gh-cli.repo
+          rm -f /etc/yum.repos.d/gh-cli*.repo
+          if compgen -G "/etc/yum.repos.d/gh-cli*.repo" >/dev/null; then
+            echo "gh-cli repo files unexpectedly remain after cleanup:" >&2
+            ls -l /etc/yum.repos.d/gh-cli*.repo >&2
+            exit 1
+          fi
           dnf -y remove gh || true
           if command -v dnf5 >/dev/null 2>&1; then
             echo "dnf5 is present; this job must exercise the non-dnf5 path." >&2
@@ -106,12 +119,16 @@ jobs:
             const failed = result !== "success";
             const body = [
               "A scheduled CI run failed. This is an automated alert to indicate dependencies/workflows may need updates.",
+              "One or more matrix legs may have failed.",
               "",
               `- Workflow: ${context.workflow}`,
               `- Result: ${result}`,
+              `- Run number: ${context.runNumber}`,
+              `- Commit: ${context.sha}`,
               `- Run: ${runUrl}`,
               `- Triggered at: ${new Date().toISOString()}`,
               "",
+              "Use the run URL above as the canonical triage source to identify failing job(s)/matrix leg(s).",
               "This issue will be auto-closed by the next successful scheduled run."
             ].join("\n");
 
