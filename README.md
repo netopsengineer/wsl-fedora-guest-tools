@@ -19,6 +19,18 @@ Developer tooling and AI CLIs change frequently. Keeping everything current ofte
 - **Strict Mode**: Fail immediately on any optional step failure (CI-friendly)
 - **Detailed Logging**: Timestamped logs with step-by-step progress tracking
 
+## AI-First Design
+
+This project is designed to be modified safely by AI agents. [`AGENTS.md`](AGENTS.md) gives an agent everything it needs to make correct changes without human supervision:
+
+- **Invariants** — hard constraints that must never be violated (gate sequence, wrapper requirement, strict bash mode, etc.)
+- **Checklists** — step-by-step task lists for the most common changes: add a tool, add a CLI flag, add a config key
+- **Decision criteria** — rules for non-obvious choices (`step_skip` vs `step_fail_optional`, critical vs optional failure classification, profile membership)
+- **Exit code reference** — all defined exit codes to prevent collisions when adding new ones
+- **Verification commands** — exact lint and smoke checks to run before committing
+
+An AI agent with access to this repo can reliably add a new tool update function, add a CLI flag, or modify the config system — and verify the result — without asking for clarification.
+
 ## Installation
 
 ### Option 1: Run directly

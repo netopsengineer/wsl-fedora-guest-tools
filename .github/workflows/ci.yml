@@ -53,6 +53,9 @@ jobs:
       - name: Format check
         run: shfmt -d wsl-fedora-guest-tools
 
+      - name: AGENTS.md size check
+        run: '[[ $(wc -c < AGENTS.md) -le 32768 ]] || { echo "AGENTS.md exceeds 32 KiB: $(wc -c < AGENTS.md) bytes"; exit 1; }'
+
       - name: Smoke checks
         run: |
           ./wsl-fedora-guest-tools --help >/dev/null
