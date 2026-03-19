@@ -234,12 +234,21 @@ This project intentionally keeps tool behavior in code. For any new tool PR:
 
 ## Continuous Integration
 
-GitHub Actions runs static quality checks and smoke tests for every PR and push to `main`:
+GitHub Actions runs static quality checks and smoke tests for:
+
+- every PR
+- every push to `main`
+- a weekly scheduled run (Monday 07:13 UTC)
+- manual runs via `workflow_dispatch`
 
 - `bash -n` syntax validation
 - `shellcheck` linting
 - `shfmt -d` format checks
 - `--help`, `--list-tools`, and dry-run smoke scenarios
+
+For scheduled runs, GitHub Actions also creates (or updates) an issue titled
+`Scheduled CI failure detected` when CI fails, then automatically closes it on
+the next successful scheduled run.
 
 ## Troubleshooting
 
