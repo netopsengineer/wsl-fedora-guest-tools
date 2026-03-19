@@ -39,7 +39,7 @@ jobs:
     steps:
       - name: Install git (dnf5)
         if: ${{ !matrix.assert_non_dnf5 }}
-        run: dnf -y install --no-weak-deps git
+        run: dnf --no-weak-deps -y install git
 
       - name: Install git (dnf)
         if: ${{ matrix.assert_non_dnf5 }}
@@ -50,7 +50,7 @@ jobs:
 
       - name: Install tooling (dnf5)
         if: ${{ !matrix.assert_non_dnf5 }}
-        run: dnf -y install --no-weak-deps sudo shellcheck shfmt util-linux dnf5
+        run: dnf --no-weak-deps -y install sudo shellcheck shfmt util-linux dnf5
 
       - name: Install tooling (dnf)
         if: ${{ matrix.assert_non_dnf5 }}
