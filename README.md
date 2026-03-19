@@ -269,7 +269,6 @@ GitHub Actions runs static quality checks and smoke tests on a matrix of support
 **Practices:**
 
 - All third-party actions are pinned to SHA digests for supply-chain security
-- Container setup uses `--no-weak-deps` to minimize image size
 
 **Automated failure alerts:**
 
