@@ -71,14 +71,14 @@ Example of the distinction: if `SKIP_CODEX == 1`, use `step_skip`. If `SKIP_CODE
 
 ### Exit Code Reference
 
-| Code | Constant               | Meaning                              |
-|------|------------------------|--------------------------------------|
-| 2    | `EXIT_USAGE`           | Invalid CLI usage / arg error        |
-| 3    | `EXIT_OS_GUARD`        | Not Fedora                           |
-| 4    | `EXIT_SUDO`            | Passwordless sudo check failed       |
-| 5    | `EXIT_LOCK`            | Lock acquisition failed              |
-| 6    | `EXIT_MISSING_CMD`     | Required command not found           |
-| 10   | `EXIT_OPTIONAL_FAILED` | One or more optional steps failed    |
+| Code | Constant               | Meaning                           |
+|------|------------------------|-----------------------------------|
+| 2    | `EXIT_USAGE`           | Invalid CLI usage / arg error     |
+| 3    | `EXIT_OS_GUARD`        | Not Fedora                        |
+| 4    | `EXIT_SUDO`            | Passwordless sudo check failed    |
+| 5    | `EXIT_LOCK`            | Lock acquisition failed           |
+| 6    | `EXIT_MISSING_CMD`     | Required command not found        |
+| 10   | `EXIT_OPTIONAL_FAILED` | One or more optional steps failed |
 
 When adding a new exit code, choose a value not in this table, add a `readonly EXIT_*` constant to the script, and update this table and the README Exit Codes table.
 
