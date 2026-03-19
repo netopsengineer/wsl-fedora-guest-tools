@@ -2,7 +2,7 @@
 
 ## Project Context
 
-- Single-file Bash project: `wsl-fedora-guest-tools.sh` (~1050 LOC).
+- Single-file Bash project: `wsl-fedora-guest-tools` (~1050 LOC).
 - Supporting files: `README.md`, `.pre-commit-config.yaml`, `cspell.json`, `.github/workflows/ci.yml`.
 - Not a monorepo. No sub-packages. This is the only instruction file.
 - Nearest-wins rule: if future sub-folder `AGENTS.md` files are added, prefer the closest one to the file being edited.
@@ -73,7 +73,7 @@ Example of the distinction: if `SKIP_CODEX == 1`, use `step_skip`. If `SKIP_CODE
 
 When adding a new tool, complete ALL of these steps. Missing any step creates an incomplete integration.
 
-### 1. Script Registry (`wsl-fedora-guest-tools.sh`)
+### 1. Script Registry (`wsl-fedora-guest-tools`)
 
 - [ ] Add tool ID to `TOOL_IDS` array. Position: dev tools grouped together before AI tools.
 - [ ] Add entry to `TOOL_DESCRIPTIONS` associative array.
@@ -85,7 +85,7 @@ When adding a new tool, complete ALL of these steps. Missing any step creates an
 - [ ] Add `SKIP_<TOOL>=1` reset and `if tool_is_selected "<tool>"; then SKIP_<TOOL>=0; fi` line in `apply_selected_tools_to_skip_flags`.
 - [ ] Update `usage()` prose if it mentions specific tools by name (first line of the heredoc description).
 
-### 2. Update Function (`wsl-fedora-guest-tools.sh`)
+### 2. Update Function (`wsl-fedora-guest-tools`)
 
 Create a dedicated function named `<tool>_update()`. It MUST follow this structure:
 
@@ -160,18 +160,18 @@ When adding a new config key:
 ### Required Checks (MUST pass before any commit)
 
 ```bash
-bash -n wsl-fedora-guest-tools.sh
-shellcheck wsl-fedora-guest-tools.sh
-shfmt -d wsl-fedora-guest-tools.sh
+bash -n wsl-fedora-guest-tools
+shellcheck wsl-fedora-guest-tools
+shfmt -d wsl-fedora-guest-tools
 ```
 
 ### Smoke Checks
 
 ```bash
-./wsl-fedora-guest-tools.sh --help
-./wsl-fedora-guest-tools.sh --list-tools
-./wsl-fedora-guest-tools.sh --dry-run --profile core
-./wsl-fedora-guest-tools.sh --dry-run --profile all
+./wsl-fedora-guest-tools --help
+./wsl-fedora-guest-tools --list-tools
+./wsl-fedora-guest-tools --dry-run --profile core
+./wsl-fedora-guest-tools --dry-run --profile all
 ```
 
 ### Definition of Done
@@ -199,7 +199,7 @@ shfmt -d wsl-fedora-guest-tools.sh
 ### Quick Find
 
 ```bash
-rg -n "^[a-zA-Z0-9_]+\\(\\) \\{" wsl-fedora-guest-tools.sh
-rg -n "TOOL_IDS|TOOL_DESCRIPTIONS|TOOL_PROFILES|PROFILE_.*_TOOLS" wsl-fedora-guest-tools.sh
-rg -n "step_begin|step_ok|step_skip|step_fail_optional" wsl-fedora-guest-tools.sh
+rg -n "^[a-zA-Z0-9_]+\\(\\) \\{" wsl-fedora-guest-tools
+rg -n "TOOL_IDS|TOOL_DESCRIPTIONS|TOOL_PROFILES|PROFILE_.*_TOOLS" wsl-fedora-guest-tools
+rg -n "step_begin|step_ok|step_skip|step_fail_optional" wsl-fedora-guest-tools
 ```

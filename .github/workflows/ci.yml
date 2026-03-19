@@ -45,21 +45,21 @@ jobs:
         run: dnf install -y sudo shellcheck shfmt util-linux
 
       - name: Syntax check
-        run: bash -n wsl-fedora-guest-tools.sh
+        run: bash -n wsl-fedora-guest-tools
 
       - name: ShellCheck
-        run: shellcheck wsl-fedora-guest-tools.sh
+        run: shellcheck wsl-fedora-guest-tools
 
       - name: Format check
-        run: shfmt -d wsl-fedora-guest-tools.sh
+        run: shfmt -d wsl-fedora-guest-tools
 
       - name: Smoke checks
         run: |
-          ./wsl-fedora-guest-tools.sh --help >/dev/null
-          ./wsl-fedora-guest-tools.sh --list-tools >/dev/null
-          ./wsl-fedora-guest-tools.sh --dry-run --profile core >/dev/null
-          ./wsl-fedora-guest-tools.sh --dry-run --profile all --skip volta,uv,claude,codex >/dev/null
-          ./wsl-fedora-guest-tools.sh --dry-run --only dnf --skip dnf >/dev/null
+          ./wsl-fedora-guest-tools --help >/dev/null
+          ./wsl-fedora-guest-tools --list-tools >/dev/null
+          ./wsl-fedora-guest-tools --dry-run --profile core >/dev/null
+          ./wsl-fedora-guest-tools --dry-run --profile all --skip volta,uv,claude,codex >/dev/null
+          ./wsl-fedora-guest-tools --dry-run --only dnf --skip dnf >/dev/null
 
   notify-scheduled-failure:
     if: ${{ always() && github.event_name == 'schedule' }}

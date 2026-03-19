@@ -21,18 +21,35 @@ Developer tooling and AI CLIs change frequently. Keeping everything current ofte
 
 ## Installation
 
-### Option 1: Run from within the project
+### Option 1: Run directly
 
 ```shell
-./wsl-fedora-guest-tools.sh [options]
+./wsl-fedora-guest-tools [options]
 ```
 
-### Option 2: Install to your PATH
+### Option 2: Symlink to PATH (recommended)
 
 ```shell
-install -m 0755 ./wsl-fedora-guest-tools.sh "$HOME/.local/bin/wsl-fedora-guest-tools"
-wsl-fedora-guest-tools [options]
+ln -sf "$(pwd)/wsl-fedora-guest-tools" "$HOME/.local/bin/wsl-fedora-guest-tools"
 ```
+
+Using `$(pwd)` ensures an absolute path in the symlink. After this, `git pull` automatically updates the installed command - no reinstall needed.
+
+### Option 3: Copy to PATH (standalone)
+
+```shell
+install -m 0755 ./wsl-fedora-guest-tools "$HOME/.local/bin/wsl-fedora-guest-tools"
+```
+
+Copied files don't auto-update. After each `git pull`, re-run the `install` command above.
+
+## Updating
+
+```shell
+cd /path/to/wsl-fedora-guest-tools && git pull
+```
+
+Symlink users (Option 2) are done - the command picks up changes immediately. Copy users (Option 3) must also re-run the `install` command.
 
 ## Usage
 
@@ -40,28 +57,28 @@ wsl-fedora-guest-tools [options]
 
 ```shell
 # Run all updates (default profile: all)
-./wsl-fedora-guest-tools.sh
+./wsl-fedora-guest-tools
 
 # Preview what would run (no changes made)
-./wsl-fedora-guest-tools.sh --dry-run
+./wsl-fedora-guest-tools --dry-run
 
 # Start from profile "dev" (dnf, volta, uv)
-./wsl-fedora-guest-tools.sh --profile dev
+./wsl-fedora-guest-tools --profile dev
 
 # Run only specific tools
-./wsl-fedora-guest-tools.sh --only uv,claude
+./wsl-fedora-guest-tools --only uv,claude
 
 # Start from a profile, then remove selected tools
-./wsl-fedora-guest-tools.sh --profile all --skip codex,claude
+./wsl-fedora-guest-tools --profile all --skip codex,claude
 
 # Show supported tool IDs and profile membership
-./wsl-fedora-guest-tools.sh --list-tools
+./wsl-fedora-guest-tools --list-tools
 
 # Fail on any error (useful for CI/CD)
-./wsl-fedora-guest-tools.sh --strict
+./wsl-fedora-guest-tools --strict
 
 # Override Fedora guard (use with caution)
-./wsl-fedora-guest-tools.sh --force
+./wsl-fedora-guest-tools --force
 ```
 
 ## Command-Line Options
@@ -146,14 +163,14 @@ With this config, default runs select `dnf,volta` unless overridden by CLI flags
 - **OS**: Fedora (use `--force` to bypass on non-Fedora systems)
 - **Privileges**: Passwordless `sudo` required for DNF operations
 - **Dependencies**:
-    - `bash`
-    - `flock` (from `util-linux`; used for lock-based concurrency control)
-    - `dnf5`
+  - `bash`
+  - `flock` (from `util-linux`; used for lock-based concurrency control)
+  - `dnf5`
 - **Optional tools** (for respective update steps):
-    - `volta` (for Node.js management and Codex)
-    - `uv`
-    - `claude`
-    - `codex`
+  - `volta` (for Node.js management and Codex)
+  - `uv`
+  - `claude`
+  - `codex`
 
 ## Exit Codes
 
@@ -227,9 +244,9 @@ This project intentionally keeps tool behavior in code. For any new tool PR:
 - Keep dry-run output parity for the new step
 - Classify failures correctly (`critical` vs `optional`) and include remediation hints
 - Update README sections:
-    - Tool IDs and Profiles
-    - Examples (if applicable)
-    - Any behavior notes specific to the tool
+  - Tool IDs and Profiles
+  - Examples (if applicable)
+  - Any behavior notes specific to the tool
 
 ## Continuous Integration
 

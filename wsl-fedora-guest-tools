@@ -469,7 +469,7 @@ WSL Fedora guest tools updater: critical DNF5 system upgrade/bootstrap,
 plus optional updates for uv, Volta/Node, Claude Code, and Codex.
 
 Usage:
-  wsl-fedora-guest-tools.sh [--dry-run] [--force] [--strict]
+  wsl-fedora-guest-tools [--dry-run] [--force] [--strict]
     [--profile <name>] [--only <tool_ids_csv>] [--skip <tool_ids_csv>]
     [--list-tools]
 
