@@ -1,0 +1,28 @@
+# Dependabot keeps SHA-pinned GitHub Actions up to date automatically.
+# It will open PRs when new versions of pinned actions are released.
+#
+# To enable: commit this file to .github/dependabot.yml on your default branch.
+# No repo settings toggle is needed — Dependabot activates on file presence.
+#
+# Docs: https://docs.github.com/en/code-security/dependabot/dependabot-version-updates
+---
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: wednesday
+      time: "09:00"
+      timezone: Etc/UTC
+    # Group all action bumps into a single PR to reduce noise.
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+    commit-message:
+      prefix: "ci"
+    labels:
+      - dependencies
+      - ci
+    open-pull-requests-limit: 5

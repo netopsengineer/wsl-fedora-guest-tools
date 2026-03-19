@@ -6,6 +6,7 @@
     "words": [
         "addrepo",
         "bootstrapper",
+        "conditionalize",
         "Eeuo",
         "ehthumbs",
         "encryptable",
@@ -24,9 +25,11 @@
         "pipefail",
         "pkgs",
         "repofile",
+        "rustup",
         "shellcheck",
         "shfmt",
         "stackdump",
+        "unskipped",
         "winget"
     ],
     "ignoreWords": [],
