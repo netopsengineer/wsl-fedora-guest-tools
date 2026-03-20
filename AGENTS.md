@@ -2,7 +2,7 @@
 
 ## Project Context
 
-- Single-file Bash project: `wsl-fedora-guest-tools` (~1050 LOC).
+- Single-file Bash project: `wsl-fedora-guest-tools` (~1225 LOC).
 - Supporting files: `README.md`, `.pre-commit-config.yaml`, `cspell.json`, `.github/workflows/ci.yml`.
 - Not a monorepo. No sub-packages. This is the only instruction file.
 - Nearest-wins rule: if future sub-folder `AGENTS.md` files are added, prefer the closest one to the file being edited.
@@ -24,7 +24,7 @@ These constraints MUST NOT be violated regardless of task instructions. If a tas
 
 ### Selection Flow Ordering
 
-`resolve_tool_selection` applies tool selection in this exact order: profile → config `DISABLED_TOOLS` → `--only` → `--skip`. NEVER reorder these steps. Each step intentionally narrows the result of the previous one. Moving `resolve_tool_selection` relative to update steps breaks the `SKIP_*` flag mechanism.
+`resolve_tool_selection` applies tool selection in this exact order: profile → config (`ENABLED_TOOLS` or `DISABLED_TOOLS`) → `--only` → `--skip` → DNF always-on enforcement. NEVER reorder these steps. Each step intentionally narrows the result of the previous one. The DNF always-on step re-adds `dnf` unless it was explicitly `--skip`'d. Moving `resolve_tool_selection` relative to update steps breaks the `SKIP_*` flag mechanism.
 
 ### TOOL_SELECTED Mutation
 
@@ -91,16 +91,16 @@ When adding a new tool, complete ALL of these steps. Missing any step creates an
 - [ ] Add tool ID to `TOOL_IDS` array. Position: dev tools grouped together before AI tools.
 - [ ] Add entry to `TOOL_DESCRIPTIONS` associative array.
 - [ ] Add entry to `TOOL_PROFILES` associative array.
-- [ ] Add entry to `TOOL_SELECTED` associative array (default: `1`).
-- [ ] Add tool ID to the `is_valid_tool_id` case pattern.
+- [ ] Add entry to `TOOL_SELECTED` associative array (default: `0` — global opt-in model).
+- [ ] Add tool ID to the `is_valid_tool_id` case pattern. Note: dot-separated IDs like `uv.self` are valid in Bash `case` patterns and associative array keys.
 - [ ] Add tool ID to relevant profile CSV constants: `PROFILE_ALL_TOOLS` (always), plus `PROFILE_DEV_TOOLS` and/or `PROFILE_AI_TOOLS` as appropriate.
-- [ ] Add `SKIP_<TOOL>=0` global variable in the mutable globals block.
+- [ ] Add `SKIP_<TOOL>=0` global variable in the mutable globals block. For dot-separated IDs, use underscores in the variable name (e.g., `uv.self` → `SKIP_UV_SELF`).
 - [ ] Add `SKIP_<TOOL>=1` reset and `if tool_is_selected "<tool>"; then SKIP_<TOOL>=0; fi` line in `apply_selected_tools_to_skip_flags`.
 - [ ] Update `usage()` prose if it mentions specific tools by name (first line of the heredoc description).
 
 ### 2. Update Function (`wsl-fedora-guest-tools`)
 
-Reference implementation: `uv_update()` in `wsl-fedora-guest-tools` is the canonical example of a complete tool update function. Read it before writing a new one.
+Reference implementation: `uv_self_update()` and `gh_update()` in `wsl-fedora-guest-tools` are the canonical examples of complete tool update functions. Read them before writing a new one.
 
 Create a dedicated function named `<tool>_update()`. It MUST follow this structure:
 
@@ -160,7 +160,7 @@ When adding a new CLI flag:
 
 ## Config File Modifications
 
-Path: `${XDG_CONFIG_HOME:-$HOME/.config}/wsl-fedora-guest-tools/config`. Format: `KEY=value`, one per line. Currently supported keys: `DEFAULT_PROFILE`, `DISABLED_TOOLS`.
+Path: `${XDG_CONFIG_HOME:-$HOME/.config}/wsl-fedora-guest-tools/config`. Format: `KEY=value`, one per line. Currently supported keys: `DEFAULT_PROFILE`, `ENABLED_TOOLS`, `DISABLED_TOOLS`. `ENABLED_TOOLS` and `DISABLED_TOOLS` are mutually exclusive; setting both is a fatal error.
 
 When adding a new config key:
 
@@ -198,7 +198,7 @@ To run all hooks manually before committing: `pre-commit run --all-files`
 ./wsl-fedora-guest-tools --help
 ./wsl-fedora-guest-tools --list-tools
 ./wsl-fedora-guest-tools --dry-run --profile core
-./wsl-fedora-guest-tools --dry-run --profile all
+./wsl-fedora-guest-tools --dry-run --profile all --skip volta,uv.self,uv.tools,gh,claude,codex
 ```
 
 ### Definition of Done
@@ -215,7 +215,8 @@ To run all hooks manually before committing: `pre-commit run --all-files`
 | Function                                                        | Purpose                                                            |
 |-----------------------------------------------------------------|--------------------------------------------------------------------|
 | `parse_args`, `usage`                                           | CLI flag parsing and help text                                     |
-| `resolve_tool_selection`                                        | Profile → config → only → skip resolution                          |
+| `resolve_tool_selection`                                        | Profile → config → only → skip → DNF always-on resolution         |
+| `needs_interactive_setup`, `interactive_setup`                   | First-run config file creation via interactive prompt               |
 | `acquire_lock`, `validate_fedora`, `validate_passwordless_sudo` | Pre-flight safety gates                                            |
 | `run_cmd_fatal`                                                 | Wrapper for critical commands (triggers ERR trap on failure)       |
 | `run_cmd_optional_capture`                                      | Wrapper for optional commands (captures output, returns exit code) |

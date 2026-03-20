@@ -1,6 +1,6 @@
 # WSL Fedora Guest Tools
 
-A robust bootstrapper and idempotent update utility for Fedora WSL environments. It orchestrates critical system installs and updates via DNF5 alongside optional updates for developer tools and AI CLIs: Volta/Node.js, `uv`, Claude Code, and Codex.
+A robust bootstrapper and idempotent update utility for Fedora WSL environments. It orchestrates critical system installs and updates via DNF5 alongside optional updates for developer tools and AI CLIs: Volta/Node.js, `uv` (self-update and tool upgrades), GitHub CLI, Claude Code, and Codex.
 
 ## Why
 
@@ -9,10 +9,12 @@ Developer tooling and AI CLIs change frequently. Keeping everything current ofte
 ## Features
 
 - **System Updates**: Safe DNF5-based system package upgrades
-- **Baseline Bootstrap**: Idempotent install of required Fedora packages and GitHub CLI repository/package
+- **Baseline Bootstrap**: Idempotent install of required Fedora packages
+- **Global Opt-In**: All optional tools default to OFF; enable via profile, config, or CLI flags
 - **Code-First Tool Logic**: Tool update behavior stays in code for clear review and predictable behavior
 - **Profiles + Selectors**: Use `--profile`, `--only`, and `--skip` to avoid skip-flag sprawl as tools grow
-- **Persistent Defaults**: Optional user config for default profile and disabled tools
+- **Persistent Defaults**: Optional user config for default profile and `ENABLED_TOOLS` allowlist or `DISABLED_TOOLS` denylist
+- **DNF Always-On**: `dnf` runs on every invocation unless explicitly `--skip dnf`
 - **Idempotent**: Safe to run repeatedly; no-op when already current
 - **Comprehensive Error Handling**: Detailed exit codes, lockfile-based concurrency control, and remediation hints
 - **Dry-Run Mode**: Preview commands before execution
@@ -74,11 +76,11 @@ Symlink users (Option 2) are done - the command picks up changes immediately. Co
 # Preview what would run (no changes made)
 ./wsl-fedora-guest-tools --dry-run
 
-# Start from profile "dev" (dnf, volta, uv)
+# Start from profile "dev" (dnf, volta, uv.self, uv.tools, gh)
 ./wsl-fedora-guest-tools --profile dev
 
 # Run only specific tools
-./wsl-fedora-guest-tools --only uv,claude
+./wsl-fedora-guest-tools --only uv.self,claude
 
 # Start from a profile, then remove selected tools
 ./wsl-fedora-guest-tools --profile all --skip codex,claude
@@ -110,35 +112,40 @@ Symlink users (Option 2) are done - the command picks up changes immediately. Co
 
 ### Tool IDs
 
-| Tool ID  | Description                                | Profiles                   |
-|----------|--------------------------------------------|----------------------------|
-| `dnf`    | System update + baseline bootstrap via DNF | `all`, `core`, `dev`, `ai` |
-| `volta`  | Node.js update via Volta                   | `all`, `dev`               |
-| `uv`     | uv self-update and uv tool upgrades        | `all`, `dev`               |
-| `claude` | Claude Code CLI update                     | `all`, `ai`                |
-| `codex`  | Codex CLI update via Volta                 | `all`, `ai`                |
+| Tool ID    | Description                                | Profiles                   |
+|------------|--------------------------------------------|----------------------------|
+| `dnf`      | System update + baseline bootstrap via DNF | `all`, `core`, `dev`, `ai` |
+| `volta`    | Node.js update via Volta                   | `all`, `dev`               |
+| `uv.self`  | uv self-update (`uv self update`)          | `all`, `dev`               |
+| `uv.tools` | uv tool upgrades (`uv tool upgrade --all`) | `all`, `dev`               |
+| `gh`       | GitHub CLI install/upgrade via DNF         | `all`, `dev`               |
+| `claude`   | Claude Code CLI update                     | `all`, `ai`                |
+| `codex`    | Codex CLI update via Volta                 | `all`, `ai`                |
 
 ### Profile definitions
 
-| Profile | Tools                       |
-|---------|-----------------------------|
-| `all`   | `dnf,volta,uv,claude,codex` |
-| `core`  | `dnf`                       |
-| `dev`   | `dnf,volta,uv`              |
-| `ai`    | `dnf,claude,codex`          |
+| Profile | Tools                                         |
+|---------|-----------------------------------------------|
+| `all`   | `dnf,volta,uv.self,uv.tools,gh,claude,codex` |
+| `core`  | `dnf`                                         |
+| `dev`   | `dnf,volta,uv.self,uv.tools,gh`              |
+| `ai`    | `dnf,claude,codex`                            |
 
 ## Selection Precedence
 
 Tool selection is resolved in this order:
 
 1. Start with profile from CLI `--profile`; else config `DEFAULT_PROFILE`; else `all`
-2. Apply config `DISABLED_TOOLS`
+2. Apply config: `ENABLED_TOOLS` (allowlist: clear and enable only listed tools) **or** `DISABLED_TOOLS` (denylist: remove listed tools). These keys are mutually exclusive; setting both is a fatal error (exit 2).
 3. If `--only` is provided, replace selection with exactly `--only`
 4. Apply CLI `--skip`
-5. `--only` + `--skip` is valid; final set is `only - skip`
+5. Enforce DNF always-on: `dnf` is re-added unless `--skip dnf` was explicitly passed
+6. `--only` + `--skip` is valid; final set is `only - skip` (plus `dnf` unless `--skip dnf`)
 
 Notes:
 
+- All optional tools default to OFF; a profile, `ENABLED_TOOLS`, `--profile`, or `--only` is required to enable them
+- `dnf` always runs unless explicitly `--skip dnf` (infrastructure tool)
 - Unknown tool IDs in CLI args are fatal (`exit 2`)
 - Unknown tool IDs in config are ignored with a warning
 - Invalid config profile is ignored with a warning and defaults to `all` unless CLI profile is provided
@@ -153,22 +160,39 @@ If `XDG_CONFIG_HOME` is not set, the fallback path is:
 
 `$HOME/.config/wsl-fedora-guest-tools/config`
 
-Supported keys:
+### Interactive First-Run Setup
 
-- `DEFAULT_PROFILE=all|core|dev|ai`
-- `DISABLED_TOOLS=tool_id_csv`
+If no config file exists and no CLI tool-selection flags (`--profile`, `--only`) are provided, the script prompts you interactively to choose a profile and writes a config file. This runs once (on first use) and only in a terminal session.
+
+In non-interactive environments (CI, pipes), the script exits with an error and instructions to create the config file or pass CLI flags.
+
+### Supported keys
+
+- `DEFAULT_PROFILE=all|core|dev|ai` — base profile used when no `--profile` CLI flag is given
+- `ENABLED_TOOLS=tool_id_csv` — allowlist: only the listed tool IDs are enabled (mutually exclusive with `DISABLED_TOOLS`)
+- `DISABLED_TOOLS=tool_id_csv` — denylist: listed tools are removed from the profile selection (mutually exclusive with `ENABLED_TOOLS`)
+
+Setting both `ENABLED_TOOLS` and `DISABLED_TOOLS` in the same config file is a fatal error (exit 2).
 
 Unknown keys are ignored with a warning.
 
-Example:
+### Examples
 
 ```bash
-# ~/.config/wsl-fedora-guest-tools/config
-DEFAULT_PROFILE=dev
-DISABLED_TOOLS=uv
+# Opt-in allowlist: enable only specific tools
+DEFAULT_PROFILE=all
+ENABLED_TOOLS=volta,uv.self,uv.tools
 ```
 
-With this config, default runs select `dnf,volta` unless overridden by CLI flags.
+With this config, default runs select `dnf,volta,uv.self,uv.tools` (`dnf` is always-on).
+
+```bash
+# Denylist: start from dev profile, disable gh
+DEFAULT_PROFILE=dev
+DISABLED_TOOLS=gh
+```
+
+With this config, default runs select `dnf,volta,uv.self,uv.tools`.
 
 ## Requirements
 
@@ -179,10 +203,11 @@ With this config, default runs select `dnf,volta` unless overridden by CLI flags
   - `flock` (from `util-linux`; used for lock-based concurrency control)
   - `dnf5`
 - **Optional tools** (for respective update steps):
-  - `volta` (for Node.js management and Codex)
-  - `uv`
-  - `claude`
-  - `codex`
+  - `volta` (for `volta` and `codex` steps)
+  - `uv` (for `uv.self` and `uv.tools` steps)
+  - `gh` CLI (installed/managed by the `gh` step itself via DNF)
+  - `claude` (for the `claude` step)
+  - `codex` (for the `codex` step)
 
 ## Exit Codes
 
@@ -203,12 +228,14 @@ The script runs these steps in order:
 1. **Lock**: Acquire lock file to prevent concurrent runs
 2. **OS Guard**: Validate Fedora base distro (skippable with `--force`)
 3. **Sudo Check**: Verify passwordless sudo is available
-4. **System Update**: DNF package upgrade (runs when `dnf` is selected)
-5. **Baseline DNF Bootstrap**: Install missing baseline packages and GitHub CLI repo/package setup (runs when `dnf` is selected)
-6. **Volta Node Update**: Optional Node.js update via Volta (runs when `volta` is selected)
-7. **uv Update**: Optional uv self-update and tool upgrades (runs when `uv` is selected)
-8. **Claude Update**: Optional Claude Code CLI update (runs when `claude` is selected)
-9. **Codex Update**: Optional Codex update via Volta (runs when `codex` is selected)
+4. **System Update**: DNF package upgrade (always-on unless `--skip dnf`)
+5. **Baseline DNF Bootstrap**: Install missing baseline packages (always-on unless `--skip dnf`)
+6. **GitHub CLI Update**: Install or upgrade `gh` via DNF with gh-cli repo setup (when `gh` is selected)
+7. **Volta Node Update**: Optional Node.js update via Volta (when `volta` is selected)
+8. **uv Self-Update**: Optional uv self-update (when `uv.self` is selected)
+9. **uv Tool Upgrade**: Optional uv tool upgrades (when `uv.tools` is selected)
+10. **Claude Update**: Optional Claude Code CLI update (when `claude` is selected)
+11. **Codex Update**: Optional Codex update via Volta (when `codex` is selected)
 
 ## Behavior Notes
 
@@ -229,9 +256,9 @@ The script runs these steps in order:
 
 ### uv self-update handling
 
-- Detects when uv self-updates are disabled
+- Detects when uv self-updates are disabled (`uv.self` step)
 - Provides guidance to upgrade uv via its original install method
-- Continues with `uv tool upgrade --all` when possible
+- `uv.tools` step runs independently regardless of `uv.self` outcome
 
 ### Claude update detection
 
@@ -245,6 +272,32 @@ The script runs these steps in order:
 - Skips update if either is missing
 - Uses `volta install @openai/codex@latest`
 - Compares before/after versions when available
+
+### DNF always-on
+
+The `dnf` tool is infrastructure and runs by default on every invocation. It can be disabled only by explicitly passing `--skip dnf`. Profile selection and `ENABLED_TOOLS` do not suppress `dnf`.
+
+### Global opt-in model
+
+All optional tools default to OFF. To enable tools:
+
+- Let the interactive first-run setup write a config file
+- Create a config file manually with `DEFAULT_PROFILE` and/or `ENABLED_TOOLS`
+- Pass `--profile` or `--only` on the command line
+
+This ensures that users who configured the tool before new tools were added are never silently opted into tools they didn't request.
+
+### ENABLED_TOOLS vs DISABLED_TOOLS
+
+`ENABLED_TOOLS` is an allowlist: only the listed tool IDs run. `DISABLED_TOOLS` is a denylist: listed tools are removed from the base profile. These keys are mutually exclusive; using both is a fatal error (exit 2).
+
+### GitHub CLI update
+
+The `gh` tool manages the `gh-cli` DNF repository and installs or upgrades the `gh` package via `dnf5`. It is independent of the baseline bootstrap step. If `gh` is not selected, no DNF repo changes are made for gh-cli.
+
+### uv operation separation
+
+uv self-update (`uv.self`) and uv tool upgrades (`uv.tools`) are independent steps with separate tool IDs. This allows fine-grained control: for example, `--only uv.tools` runs only the tool upgrades without attempting the self-update.
 
 ## Contributing New Tools
 
