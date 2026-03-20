@@ -215,8 +215,8 @@ To run all hooks manually before committing: `pre-commit run --all-files`
 | Function                                                        | Purpose                                                            |
 |-----------------------------------------------------------------|--------------------------------------------------------------------|
 | `parse_args`, `usage`                                           | CLI flag parsing and help text                                     |
-| `resolve_tool_selection`                                        | Profile → config → only → skip → DNF always-on resolution         |
-| `needs_interactive_setup`, `interactive_setup`                   | First-run config file creation via interactive prompt               |
+| `resolve_tool_selection`                                        | Profile → config → only → skip → DNF always-on resolution          |
+| `needs_interactive_setup`, `interactive_setup`                  | First-run config file creation via interactive prompt              |
 | `acquire_lock`, `validate_fedora`, `validate_passwordless_sudo` | Pre-flight safety gates                                            |
 | `run_cmd_fatal`                                                 | Wrapper for critical commands (triggers ERR trap on failure)       |
 | `run_cmd_optional_capture`                                      | Wrapper for optional commands (captures output, returns exit code) |

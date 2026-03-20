@@ -124,12 +124,12 @@ Symlink users (Option 2) are done - the command picks up changes immediately. Co
 
 ### Profile definitions
 
-| Profile | Tools                                         |
-|---------|-----------------------------------------------|
+| Profile | Tools                                        |
+|---------|----------------------------------------------|
 | `all`   | `dnf,volta,uv.self,uv.tools,gh,claude,codex` |
-| `core`  | `dnf`                                         |
+| `core`  | `dnf`                                        |
 | `dev`   | `dnf,volta,uv.self,uv.tools,gh`              |
-| `ai`    | `dnf,claude,codex`                            |
+| `ai`    | `dnf,claude,codex`                           |
 
 ## Selection Precedence
 
@@ -199,15 +199,15 @@ With this config, default runs select `dnf,volta,uv.self,uv.tools`.
 - **OS**: Fedora (use `--force` to bypass on non-Fedora systems)
 - **Privileges**: Passwordless `sudo` required for DNF operations
 - **Dependencies**:
-  - `bash`
-  - `flock` (from `util-linux`; used for lock-based concurrency control)
-  - `dnf5`
+    - `bash`
+    - `flock` (from `util-linux`; used for lock-based concurrency control)
+    - `dnf5`
 - **Optional tools** (for respective update steps):
-  - `volta` (for `volta` and `codex` steps)
-  - `uv` (for `uv.self` and `uv.tools` steps)
-  - `gh` CLI (installed/managed by the `gh` step itself via DNF)
-  - `claude` (for the `claude` step)
-  - `codex` (for the `codex` step)
+    - `volta` (for `volta` and `codex` steps)
+    - `uv` (for `uv.self` and `uv.tools` steps)
+    - `gh` CLI (installed/managed by the `gh` step itself via DNF)
+    - `claude` (for the `claude` step)
+    - `codex` (for the `codex` step)
 
 ## Exit Codes
 
@@ -309,9 +309,9 @@ This project intentionally keeps tool behavior in code. For any new tool PR:
 - Keep dry-run output parity for the new step
 - Classify failures correctly (`critical` vs `optional`) and include remediation hints
 - Update README sections:
-  - Tool IDs and Profiles
-  - Examples (if applicable)
-  - Any behavior notes specific to the tool
+    - Tool IDs and Profiles
+    - Examples (if applicable)
+    - Any behavior notes specific to the tool
 
 ## Continuous Integration
 
