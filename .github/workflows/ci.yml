@@ -61,8 +61,11 @@ jobs:
           ./wsl-fedora-guest-tools --help >/dev/null
           ./wsl-fedora-guest-tools --list-tools >/dev/null
           ./wsl-fedora-guest-tools --dry-run --profile core >/dev/null
-          ./wsl-fedora-guest-tools --dry-run --profile all --skip volta,uv,claude,codex >/dev/null
+          ./wsl-fedora-guest-tools --dry-run --profile all --skip volta,uv.self,uv.tools,gh,claude,codex >/dev/null
           ./wsl-fedora-guest-tools --dry-run --only dnf --skip dnf >/dev/null
+          ./wsl-fedora-guest-tools --dry-run --only uv.self >/dev/null || [[ $? -eq 10 ]]
+          ./wsl-fedora-guest-tools --dry-run --only uv.tools >/dev/null || [[ $? -eq 10 ]]
+          ./wsl-fedora-guest-tools --dry-run --only gh >/dev/null || [[ $? -eq 10 ]]
 
   notify-scheduled-failure:
     if: ${{ always() && github.event_name == 'schedule' }}
