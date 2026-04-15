@@ -27,6 +27,8 @@ jobs:
           script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
+            const getErrorStatus = (error) => error.status ?? error.response?.status;
+            const pullRequestNumber = context.payload.pull_request?.number;
             const requiredLabels = [
               {
                 name: "ci",
@@ -50,7 +52,7 @@ jobs:
                   description: label.description
                 });
               } catch (error) {
-                const status = error.status ?? error.response?.status;
+                const status = getErrorStatus(error);
 
                 if (status === 422) {
                   await github.rest.issues.updateLabel({
@@ -67,16 +69,16 @@ jobs:
               }
             }
 
-            if (context.payload.pull_request) {
+            if (pullRequestNumber) {
               try {
                 await github.rest.issues.addLabels({
                   owner,
                   repo,
-                  issue_number: context.payload.pull_request.number,
+                  issue_number: pullRequestNumber,
                   labels: requiredLabels.map((label) => label.name)
                 });
               } catch (error) {
-                const status = error.status ?? error.response?.status;
+                const status = getErrorStatus(error);
                 console.error(`Failed to apply Dependabot labels (status: ${status ?? "unknown"}):`, error);
                 throw error;
               }
