@@ -2,6 +2,8 @@
 name: Dependabot labels
 
 on:
+  # pull_request_target is required here because Dependabot PRs receive a
+  # read-only token on pull_request, which cannot create missing labels.
   pull_request_target:
     types:
       - opened
@@ -61,6 +63,7 @@ jobs:
                 }
               } catch (error) {
                 if (error.status !== 404) {
+                  console.error(`Failed to inspect label ${label.name}:`, error);
                   throw error;
                 }
 
