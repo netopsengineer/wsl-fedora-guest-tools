@@ -61,8 +61,10 @@ jobs:
                   });
                 }
               } catch (error) {
-                if ((error.status ?? error.response?.status) !== 404) {
-                  console.error(`Failed to inspect label ${label.name}:`, error);
+                const status = error.status ?? error.response?.status;
+
+                if (status !== 404) {
+                  console.error(`Failed to inspect label ${label.name} (status: ${status ?? "unknown"}):`, error);
                   throw error;
                 }
 
