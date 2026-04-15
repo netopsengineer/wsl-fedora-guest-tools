@@ -56,13 +56,12 @@ jobs:
                     owner,
                     repo,
                     name: label.name,
-                    new_name: label.name,
                     color: label.color,
                     description: label.description
                   });
                 }
               } catch (error) {
-                if (error.status !== 404) {
+                if ((error.status ?? error.response?.status) !== 404) {
                   console.error(`Failed to inspect label ${label.name}:`, error);
                   throw error;
                 }
