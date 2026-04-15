@@ -60,10 +60,10 @@ jobs:
                     color: label.color,
                     description: label.description
                   });
+                } else {
+                  console.error(`Failed to reconcile label ${label.name} (status: ${status ?? "unknown"}):`, error);
+                  throw error;
                 }
-
-                console.error(`Failed to reconcile label ${label.name} (status: ${status ?? "unknown"}):`, error);
-                throw error;
               }
             }
 
