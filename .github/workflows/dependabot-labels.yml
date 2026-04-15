@@ -74,7 +74,7 @@ jobs:
               }
             }
 
-            if (context.eventName === "pull_request_target") {
+            if (context.payload.pull_request) {
               await github.rest.issues.addLabels({
                 owner,
                 repo,
