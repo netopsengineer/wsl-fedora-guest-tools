@@ -42,32 +42,6 @@ jobs:
 
             for (const label of requiredLabels) {
               try {
-                const { data: existing } = await github.rest.issues.getLabel({
-                  owner,
-                  repo,
-                  name: label.name
-                });
-
-                if (
-                  existing.color.toLowerCase() !== label.color.toLowerCase() ||
-                  (existing.description || "") !== label.description
-                ) {
-                  await github.rest.issues.updateLabel({
-                    owner,
-                    repo,
-                    name: label.name,
-                    color: label.color,
-                    description: label.description
-                  });
-                }
-              } catch (error) {
-                const status = error.status ?? error.response?.status;
-
-                if (status !== 404) {
-                  console.error(`Failed to inspect label ${label.name} (status: ${status ?? "unknown"}):`, error);
-                  throw error;
-                }
-
                 await github.rest.issues.createLabel({
                   owner,
                   repo,
@@ -75,14 +49,36 @@ jobs:
                   color: label.color,
                   description: label.description
                 });
+              } catch (error) {
+                const status = error.status ?? error.response?.status;
+
+                if (status === 422) {
+                  await github.rest.issues.updateLabel({
+                    owner,
+                    repo,
+                    name: label.name,
+                    color: label.color,
+                    description: label.description
+                  });
+                  continue;
+                }
+
+                console.error(`Failed to reconcile label ${label.name} (status: ${status ?? "unknown"}):`, error);
+                throw error;
               }
             }
 
             if (context.payload.pull_request) {
-              await github.rest.issues.addLabels({
-                owner,
-                repo,
-                issue_number: context.payload.pull_request.number,
-                labels: requiredLabels.map((label) => label.name)
-              });
+              try {
+                await github.rest.issues.addLabels({
+                  owner,
+                  repo,
+                  issue_number: context.payload.pull_request.number,
+                  labels: requiredLabels.map((label) => label.name)
+                });
+              } catch (error) {
+                const status = error.status ?? error.response?.status;
+                console.error(`Failed to apply Dependabot labels (status: ${status ?? "unknown"}):`, error);
+                throw error;
+              }
             }
