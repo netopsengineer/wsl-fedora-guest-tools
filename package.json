@@ -1,0 +1,13 @@
+{
+  "name": "wsl-fedora-guest-tools-tooling",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Development tooling for wsl-fedora-guest-tools.",
+  "license": "MIT",
+  "scripts": {
+    "lint": "prek run --all-files --show-diff-on-failure"
+  },
+  "devDependencies": {
+    "@j178/prek": "0.4.4"
+  }
+}

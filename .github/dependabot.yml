@@ -1,9 +1,4 @@
-# Dependabot keeps SHA-pinned GitHub Actions up to date automatically.
-# It will open PRs when new versions of pinned actions are released.
-#
-# To enable: commit this file to .github/dependabot.yml on your default branch.
-# No repo settings toggle is needed — Dependabot activates on file presence.
-#
+# Dependabot keeps pinned automation and local quality tooling current.
 # Docs: https://docs.github.com/en/code-security/dependabot/dependabot-version-updates
 ---
 version: 2
@@ -11,11 +6,12 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
-      day: wednesday
-      time: "09:00"
-      timezone: Etc/UTC
-    # Group all action bumps into a single PR to reduce noise.
+      interval: daily
+    cooldown:
+      default-days: 7
+      semver-major-days: 30
+      semver-minor-days: 7
+      semver-patch-days: 3
     groups:
       github-actions:
         patterns:
@@ -24,5 +20,46 @@ updates:
       prefix: "ci"
     labels:
       - dependencies
-      - ci
+      - github-actions
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: daily
+    cooldown:
+      default-days: 7
+      semver-major-days: 30
+      semver-minor-days: 7
+      semver-patch-days: 3
+    versioning-strategy: increase
+    groups:
+      npm-tooling:
+        patterns:
+          - "*"
+    commit-message:
+      prefix: "chore"
+    labels:
+      - dependencies
+      - npm
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: pre-commit
+    directory: /
+    schedule:
+      interval: daily
+    cooldown:
+      default-days: 7
+      semver-major-days: 30
+      semver-minor-days: 7
+      semver-patch-days: 3
+    groups:
+      pre-commit:
+        patterns:
+          - "*"
+    commit-message:
+      prefix: "chore"
+    labels:
+      - dependencies
+      - pre-commit
     open-pull-requests-limit: 5
