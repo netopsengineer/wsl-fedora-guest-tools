@@ -9,9 +9,6 @@ updates:
       interval: daily
     cooldown:
       default-days: 7
-      semver-major-days: 30
-      semver-minor-days: 7
-      semver-patch-days: 3
     groups:
       github-actions:
         patterns:
@@ -50,9 +47,6 @@ updates:
       interval: daily
     cooldown:
       default-days: 7
-      semver-major-days: 30
-      semver-minor-days: 7
-      semver-patch-days: 3
     groups:
       pre-commit:
         patterns:
