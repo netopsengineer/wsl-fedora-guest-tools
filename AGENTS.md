@@ -3,7 +3,7 @@
 ## Project Context
 
 - Single-file Bash project: `wsl-fedora-guest-tools` (~1225 LOC).
-- Supporting files: `README.md`, `.pre-commit-config.yaml`, `cspell.json`, `.github/workflows/ci.yml`.
+- Supporting files: `README.md`, `.pre-commit-config.yaml`, `cspell.json`, `.github/workflows/*.yml`.
 - Not a monorepo. No sub-packages. This is the only instruction file.
 - Nearest-wins rule: if future sub-folder `AGENTS.md` files are added, prefer the closest one to the file being edited.
 - This file is canonical. `CLAUDE.md` cross-references it. Do not duplicate or contradict instructions across files.
