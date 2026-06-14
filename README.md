@@ -199,15 +199,17 @@ With this config, default runs select `dnf,volta,uv.self,uv.tools`.
 - **OS**: Fedora (use `--force` to bypass on non-Fedora systems)
 - **Privileges**: Passwordless `sudo` required for DNF operations
 - **Dependencies**:
-    - `bash`
-    - `flock` (from `util-linux`; used for lock-based concurrency control)
-    - `dnf5`
+  - `bash`
+  - `flock` (from `util-linux`; used for lock-based concurrency control)
+  - `dnf5`
+- **Baseline packages installed by DNF bootstrap**:
+  - Includes `bubblewrap`, which Codex requires for sandboxing
 - **Optional tools** (for respective update steps):
-    - `volta` (for `volta` and `codex` steps)
-    - `uv` (for `uv.self` and `uv.tools` steps)
-    - `gh` CLI (installed/managed by the `gh` step itself via DNF)
-    - `claude` (for the `claude` step)
-    - `codex` (for the `codex` step)
+  - `volta` (for `volta` and `codex` steps)
+  - `uv` (for `uv.self` and `uv.tools` steps)
+  - `gh` CLI (installed/managed by the `gh` step itself via DNF)
+  - `claude` (for the `claude` step)
+  - `codex` (for the `codex` step)
 
 ## Exit Codes
 
