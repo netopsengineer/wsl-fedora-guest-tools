@@ -79,14 +79,36 @@ jobs:
 
       - name: Smoke checks
         run: |
+          expect_success_or_exit_10() {
+            local log_file
+            local status
+
+            log_file="$(mktemp)"
+            if "$@" >"$log_file" 2>&1; then
+              rm -f "$log_file"
+              return 0
+            fi
+
+            status=$?
+            if [[ "$status" -eq 10 ]]; then
+              rm -f "$log_file"
+              return 0
+            fi
+
+            cat "$log_file"
+            rm -f "$log_file"
+            echo "Expected exit status 0 or 10, got ${status}: $*" >&2
+            return 1
+          }
+
           ./wsl-fedora-guest-tools --help >/dev/null
           ./wsl-fedora-guest-tools --list-tools >/dev/null
           ./wsl-fedora-guest-tools --dry-run --profile core >/dev/null
           ./wsl-fedora-guest-tools --dry-run --profile all --skip volta,uv.self,uv.tools,gh,claude,codex >/dev/null
           ./wsl-fedora-guest-tools --dry-run --only dnf --skip dnf >/dev/null
-          ./wsl-fedora-guest-tools --dry-run --only uv.self >/dev/null || [[ $? -eq 10 ]]
-          ./wsl-fedora-guest-tools --dry-run --only uv.tools >/dev/null || [[ $? -eq 10 ]]
-          ./wsl-fedora-guest-tools --dry-run --only gh >/dev/null || [[ $? -eq 10 ]]
+          expect_success_or_exit_10 ./wsl-fedora-guest-tools --dry-run --only uv.self
+          expect_success_or_exit_10 ./wsl-fedora-guest-tools --dry-run --only uv.tools
+          expect_success_or_exit_10 ./wsl-fedora-guest-tools --dry-run --only gh
 
   notify-scheduled-failure:
     if: ${{ always() && github.event_name == 'schedule' }}
