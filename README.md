@@ -317,7 +317,9 @@ This project intentionally keeps tool behavior in code. For any new tool PR:
 
 ## Continuous Integration
 
-GitHub Actions runs static quality checks and smoke tests on a matrix of supported Fedora versions (currently Fedora 42 and 43).
+GitHub Actions runs static quality checks through the npm-locked `prek` hook
+runner, then runs smoke tests on a matrix of supported Fedora versions
+(currently Fedora 42 and 43).
 
 **Triggers:**
 
@@ -328,14 +330,20 @@ GitHub Actions runs static quality checks and smoke tests on a matrix of support
 
 **Checks:**
 
-- `bash -n` syntax validation
-- `shellcheck` linting
-- `shfmt -d` format checks
+- `bash -n` syntax validation through `prek`
+- `shellcheck` linting through `prek`
+- `shfmt` format checks through `prek`
+- GitHub Actions workflow lint/security checks through `actionlint` and
+  `zizmor`
 - `--help`, `--list-tools`, and dry-run smoke scenarios
 
 **Practices:**
 
 - All third-party actions are pinned to SHA digests for supply-chain security
+- Static quality tooling is installed from `package-lock.json` and runs the
+  same `.pre-commit-config.yaml` hooks locally and in CI
+- Dependabot tracks GitHub Actions, npm development tooling, and pre-commit
+  hook updates with grouped PRs and cooldowns
 
 **Automated failure alerts:**
 

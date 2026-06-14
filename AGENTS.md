@@ -3,7 +3,8 @@
 ## Project Context
 
 - Single-file Bash project: `wsl-fedora-guest-tools` (~1225 LOC).
-- Supporting files: `README.md`, `.pre-commit-config.yaml`, `cspell.json`, `.github/workflows/*.yml`.
+- Supporting files: `README.md`, `package.json`, `package-lock.json`,
+  `.pre-commit-config.yaml`, `cspell.json`, `.github/workflows/*.yml`.
 - Not a monorepo. No sub-packages. This is the only instruction file.
 - Nearest-wins rule: if future sub-folder `AGENTS.md` files are added, prefer the closest one to the file being edited.
 - This file is canonical. `CLAUDE.md` cross-references it. Do not duplicate or contradict instructions across files.
@@ -175,22 +176,30 @@ When adding a new config key:
 ### Required Checks (MUST pass before any commit)
 
 ```bash
-bash -n wsl-fedora-guest-tools
-shellcheck wsl-fedora-guest-tools
-shfmt -d wsl-fedora-guest-tools
+npm ci --ignore-scripts --loglevel=error
+npm run lint
 ```
 
-Install these tools locally with: `sudo dnf install -y shellcheck shfmt`
+`npm run lint` invokes the npm-locked `prek` runner against
+`.pre-commit-config.yaml`.
 
 ### Pre-Commit Hooks
 
-The repository uses pre-commit hooks (`.pre-commit-config.yaml`) that run automatically on `git commit`. Commits are blocked if any hook fails. The hooks run:
+The repository uses `prek` with the standard pre-commit config file
+(`.pre-commit-config.yaml`). Commits are blocked if any hook fails. The hooks
+run:
 
+- Bash syntax validation (`bash -n`)
 - `shfmt` — enforces shell formatting
 - `shellcheck` — enforces shell linting
+- GitHub Actions lint/security checks (`actionlint`, `zizmor`)
 - File hygiene: `check-yaml`, `check-json`, `end-of-file-fixer`, `trailing-whitespace`, `mixed-line-ending`, `check-executables-have-shebangs`, `check-shebang-scripts-are-executable`, `check-added-large-files`, `check-merge-conflict`
 
-To run all hooks manually before committing: `pre-commit run --all-files`
+To run all hooks manually before committing: `npm run lint`
+
+Dependabot tracks hook updates through the `pre-commit` ecosystem. Keep
+third-party hook `rev` values pinned to commit SHAs with `# frozen: vX.Y.Z`
+comments so the executed revision is immutable while remaining updateable.
 
 ### Smoke Checks
 
@@ -203,7 +212,8 @@ To run all hooks manually before committing: `pre-commit run --all-files`
 
 ### Definition of Done
 
-- [ ] All three lint checks pass (`bash -n`, `shellcheck`, `shfmt`).
+- [ ] Static hook suite passes (`npm run lint`, including `bash -n`,
+  `shellcheck`, `shfmt`, `actionlint`, and `zizmor`).
 - [ ] `README.md` matches implemented flags, profiles, exit codes, and tool behavior.
 - [ ] `--dry-run` prints commands with no side effects for all affected tools.
 - [ ] `--list-tools` output includes any new tools with correct profile membership.
