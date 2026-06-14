@@ -87,9 +87,10 @@ jobs:
             if "$@" >"$log_file" 2>&1; then
               rm -f "$log_file"
               return 0
+            else
+              status=$?
             fi
 
-            status=$?
             if [[ "$status" -eq 10 ]]; then
               rm -f "$log_file"
               return 0
