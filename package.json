@@ -8,6 +8,6 @@
     "lint": "prek run --all-files --show-diff-on-failure"
   },
   "devDependencies": {
-    "@j178/prek": "0.4.11"
+    "@j178/prek": "0.4.12"
   }
 }
