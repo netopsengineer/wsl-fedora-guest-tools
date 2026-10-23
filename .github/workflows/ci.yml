@@ -38,7 +38,8 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
+          node-version: ^24.22.1
+          check-latest: true
           cache: npm
 
       - name: Install tooling
@@ -59,8 +60,8 @@ jobs:
         include:
           - fedora_image: "fedora:43"
             fedora_label: fedora43
-          - fedora_image: "fedora:42"
-            fedora_label: fedora42
+          - fedora_image: "fedora:44"
+            fedora_label: fedora44
     container:
       image: ${{ matrix.fedora_image }}
     timeout-minutes: 10
