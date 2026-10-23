@@ -319,7 +319,7 @@ This project intentionally keeps tool behavior in code. For any new tool PR:
 
 GitHub Actions runs static quality checks through the npm-locked `prek` hook
 runner, then runs smoke tests on a matrix of supported Fedora versions
-(currently Fedora 42 and 43).
+(currently Fedora 43 and 44).
 
 **Triggers:**
 
